@@ -13,9 +13,8 @@ description: >
 
 ## 前置条件
 
-1. `~/.teambition/config.json` 已配置（Teambition 工时 skill 的配置）
-2. `~/.dingtalk-daily/config.json` 已配置（本 skill 的配置）
-3. 用户在钉钉中已建立日报模板（知道模板 ID 和字段名）
+1. 用户在钉钉中已建立日报模板（知道模板 ID 和字段名）
+2. 钉钉凭据（appkey/appsecret/userid/template_id）和 Teambition 凭据（app_id/app_secret/organization_id/user_id）已填写在内嵌配置或本地覆盖文件中
 
 首次使用时，引导用户阅读 `references/setup-guide.md` 完成配置。
 
@@ -23,10 +22,15 @@ description: >
 
 ### 判断状态
 
-首先检查 `~/.dingtalk-daily/config.json` 是否存在：
-- 不存在 → 进入「首次配置流程」
-- 存在但字段为空 → 引导填写缺失字段
-- 存在且完整 → 直接执行日报生成/发送
+配置加载优先级（低 → 高）：
+1. `references/config.default.json`（skill 内嵌，始终加载，**不需要本地文件存在**）
+2. `~/.dingtalk-daily/config.json`（本地覆盖，仅需填写与内嵌默认不同的字段，存在则合并）
+
+**状态判断基于合并后的配置**，而非本地文件是否存在：
+- 合并后 `dingtalk.appkey`/`appsecret`/`userid`/`template_id` 任一为空 → 进入「首次配置流程」
+- 合并后 `teambition.app_id`/`app_secret`/`organization_id` 任一为空 → 进入「首次配置流程」
+- 合并后 `teambition.user_id` 为空 → 提示配置（可用 `--user` 参数临时覆盖）
+- 凭据完整 → 直接执行日报生成/发送
 
 ### 首次配置流程
 
@@ -77,7 +81,11 @@ python scripts/dd_config.py template-detail TEMPLATE_ID
 
 ## 配置文件说明
 
-`~/.dingtalk-daily/config.json` 关键字段：
+配置由两层合并而成（内嵌 < 本地覆盖）：
+- **内嵌**：`references/config.default.json`（随 skill 分发，含凭据时开箱即用）
+- **本地覆盖**：`~/.dingtalk-daily/config.json`（不存在不报错，存在则覆盖同名字段）
+
+`~/.dingtalk-daily/config.json` 关键字段（只需填写与内嵌默认不同的部分）：
 
 ```json
 {
@@ -113,7 +121,7 @@ python scripts/dd_config.py template-detail TEMPLATE_ID
 
 | 场景 | 处理方式 |
 |------|---------|
-| 配置文件不存在 | 提示运行 `dd_config.py init` |
+| 合并后凭据仍为空 | 引导填写缺失字段（内嵌或本地覆盖均可） |
 | Teambition token 过期 | JWT 自动重新生成（每次请求前生成） |
 | 钉钉 token 过期 | 自动刷新（缓存在 `~/.dingtalk-daily/.token_cache.json`）|
 | 无计划工时记录 | 显示「无计划工时记录」，不阻止发送 |
