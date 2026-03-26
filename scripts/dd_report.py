@@ -24,8 +24,8 @@ import time
 from datetime import date, timedelta
 
 # 匹配项目名中的 "数字-" 和 "客户代码-" 前缀，如 "26-CZJ-" → 去掉后得到真实项目名
-_NUM_PREFIX_RE = re.compile(r'^\d+-')
-_CLIENT_CODE_RE = re.compile(r'^[A-Z]{2,5}-')
+_NUM_PREFIX_RE = re.compile(r"^\d+-")
+_CLIENT_CODE_RE = re.compile(r"^[A-Z]{2,5}-")
 
 
 def _normalize_project_name(name: str) -> str:
@@ -35,9 +35,10 @@ def _normalize_project_name(name: str) -> str:
     "25-XX-某企业服务平台" → "某企业服务平台"
     "公共项目"            → "公共项目"
     """
-    name = _NUM_PREFIX_RE.sub("", name)   # 去掉开头的 "数字-"
+    name = _NUM_PREFIX_RE.sub("", name)  # 去掉开头的 "数字-"
     name = _CLIENT_CODE_RE.sub("", name)  # 去掉开头的 "大写字母代码-"
     return name
+
 
 try:
     import jwt
@@ -55,7 +56,9 @@ except ImportError:
 # ─── 配置 ────────────────────────────────────────────────────────────────────
 
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-_DEFAULT_CONFIG_FILE = os.path.join(_SCRIPT_DIR, "..", "references", "config.default.json")
+_DEFAULT_CONFIG_FILE = os.path.join(
+    _SCRIPT_DIR, "..", "references", "config.default.json"
+)
 _LOCAL_CONFIG_DIR = os.path.expanduser("~/.dingtalk-daily")
 _LOCAL_CONFIG_FILE = os.path.join(_LOCAL_CONFIG_DIR, "config.json")
 
@@ -96,6 +99,7 @@ def load_config(local_path: str = None) -> dict:
 
 # ─── 工作日计算 ───────────────────────────────────────────────────────────────
 
+
 def prev_workday(d: date) -> date:
     """上一个工作日（跳过周末）"""
     d = d - timedelta(days=1)
@@ -114,11 +118,14 @@ def next_workday(d: date) -> date:
 
 # ─── Teambition 认证 ──────────────────────────────────────────────────────────
 
+
 def tb_jwt_token(app_id: str, app_secret: str) -> str:
     """生成 Teambition JWT App Access Token"""
     now = int(time.time())
     payload = {"iat": now, "_appId": app_id, "exp": now + 3600}
-    token = jwt.encode(payload, app_secret, algorithm="HS256", headers={"typ": "jwt", "alg": "HS256"})
+    token = jwt.encode(
+        payload, app_secret, algorithm="HS256", headers={"typ": "jwt", "alg": "HS256"}
+    )
     return token if isinstance(token, str) else token.decode("ascii")
 
 
@@ -178,12 +185,14 @@ def _get_task_full_name(tb_config: dict, user_id: str, task_id: str) -> str:
             timeout=8,
         )
         resp.raise_for_status()
-        task = (resp.json().get("result") or {})
+        task = resp.json().get("result") or {}
         task_name = task.get("content", "")
         project_id = task.get("projectId", "")
 
         if task_name:
-            raw_proj = _get_project_name(tb_config, user_id, project_id) if project_id else ""
+            raw_proj = (
+                _get_project_name(tb_config, user_id, project_id) if project_id else ""
+            )
             proj_name = _normalize_project_name(raw_proj) if raw_proj else ""
             full_name = f"{proj_name}-{task_name}" if proj_name else task_name
     except Exception:
@@ -231,7 +240,12 @@ def fetch_actual_hours(tb_config: dict, user_id: str, date_str: str) -> list:
     resp = requests.get(
         f"{base}/api/worktime/query",
         headers=headers,
-        params={"userId": user_id, "startDate": date_str, "endDate": date_str, "pageSize": 100},
+        params={
+            "userId": user_id,
+            "startDate": date_str,
+            "endDate": date_str,
+            "pageSize": 100,
+        },
         timeout=15,
     )
     resp.raise_for_status()
@@ -241,16 +255,20 @@ def fetch_actual_hours(tb_config: dict, user_id: str, date_str: str) -> list:
     for r in records:
         task_id = r.get("objectId", "")
         task_name = _get_task_full_name(tb_config, user_id, task_id)
-        result.append({
-            "task_id": task_id,
-            "task_name": task_name,
-            "hours": ms_to_hours(r.get("worktime", 0)),
-            "description": r.get("description", ""),
-        })
+        result.append(
+            {
+                "task_id": task_id,
+                "task_name": task_name,
+                "hours": ms_to_hours(r.get("worktime", 0)),
+                "description": r.get("description", ""),
+            }
+        )
     return result
 
 
-def fetch_planned_hours(tb_config: dict, user_id: str, date_str: str, **_kwargs) -> list:
+def fetch_planned_hours(
+    tb_config: dict, user_id: str, date_str: str, **_kwargs
+) -> list:
     """
     查询指定日期的计划工时记录（/api/plantime/query），通过 API 解析任务名。
     不依赖 config 中的 tasks/projects 配置。
@@ -262,7 +280,12 @@ def fetch_planned_hours(tb_config: dict, user_id: str, date_str: str, **_kwargs)
     resp = requests.get(
         f"{base}/api/plantime/query",
         headers=headers,
-        params={"userId": user_id, "startDate": date_str, "endDate": date_str, "pageSize": 100},
+        params={
+            "userId": user_id,
+            "startDate": date_str,
+            "endDate": date_str,
+            "pageSize": 100,
+        },
         timeout=15,
     )
     resp.raise_for_status()
@@ -272,21 +295,24 @@ def fetch_planned_hours(tb_config: dict, user_id: str, date_str: str, **_kwargs)
     for r in records:
         task_id = r.get("objectId", "")
         task_name = _get_task_full_name(tb_config, user_id, task_id)
-        result.append({
-            "task_name": task_name,
-            "task_id": task_id,
-            "hours": ms_to_hours(r.get("plantime", 0)),
-        })
+        result.append(
+            {
+                "task_name": task_name,
+                "task_id": task_id,
+                "hours": ms_to_hours(r.get("plantime", 0)),
+            }
+        )
     return result
 
 
 # ─── 格式化日报内容 ──────────────────────────────────────────────────────────
 
+
 def _parse_project_task(task_name: str) -> tuple:
     """从 '项目名-任务名' 格式中提取项目和任务，无法拆分则整体归入任务"""
     if "-" in task_name:
         idx = task_name.index("-")
-        return task_name[:idx], task_name[idx+1:]
+        return task_name[:idx], task_name[idx + 1 :]
     return "其他", task_name
 
 
@@ -305,13 +331,15 @@ def _merge_label(task: str, desc: str) -> str:
     if not desc or not desc.strip():
         return task
     desc = desc.strip()
-    cjk = [c for c in task if '\u4e00' <= c <= '\u9fff']
+    cjk = [c for c in task if "\u4e00" <= c <= "\u9fff"]
     if cjk and sum(1 for c in cjk if c in desc) / len(cjk) >= 0.5:
         return desc  # 重叠度高，desc 已足够表达
     return f"{task}，{desc}"
 
 
-def format_actual_content(records: list, date_str: str, project_aliases: dict = None) -> str:
+def format_actual_content(
+    records: list, date_str: str, project_aliases: dict = None
+) -> str:
     """
     将实际工时记录格式化为历史风格：
 
@@ -331,6 +359,7 @@ def format_actual_content(records: list, date_str: str, project_aliases: dict = 
     aliases = project_aliases or {}
     # 按项目分组，保留原始顺序
     from collections import OrderedDict
+
     groups = OrderedDict()
     for r in records:
         proj, task = _parse_project_task(r["task_name"])
@@ -345,6 +374,7 @@ def format_actual_content(records: list, date_str: str, project_aliases: dict = 
 
     # 日期标题（{M}月{D}日，去掉前导零）
     from datetime import date as _date
+
     d = _date.fromisoformat(date_str)
     header = f"{d.month}月{d.day}日"
 
@@ -358,7 +388,9 @@ def format_actual_content(records: list, date_str: str, project_aliases: dict = 
     return "\n".join(lines)
 
 
-def format_planned_content(records: list, date_str: str, project_aliases: dict = None) -> str:
+def format_planned_content(
+    records: list, date_str: str, project_aliases: dict = None
+) -> str:
     """
     将计划工时记录格式化为历史风格：每行一个项目名，不含工时、不编号。
     研发部公共项目排最后。
@@ -383,6 +415,7 @@ def format_planned_content(records: list, date_str: str, project_aliases: dict =
 
 
 # ─── 钉钉认证与发送 ───────────────────────────────────────────────────────────
+
 
 def get_dingtalk_token(appkey: str, appsecret: str) -> str:
     """获取钉钉旧版 OAPI Access Token（用于 oapi.dingtalk.com 接口）"""
@@ -410,8 +443,9 @@ def get_dingtalk_token(appkey: str, appsecret: str) -> str:
     return token
 
 
-
-def send_dingtalk_log(dd_config: dict, contents_list: list, dry_run: bool = False) -> dict:
+def send_dingtalk_log(
+    dd_config: dict, contents_list: list, dry_run: bool = False
+) -> dict:
     """
     发送钉钉日志（使用 oapi.dingtalk.com/topapi/report/create 端点）。
 
@@ -429,15 +463,16 @@ def send_dingtalk_log(dd_config: dict, contents_list: list, dry_run: bool = Fals
 
     # topapi/report/create 的 contents 格式：
     #   sort/type 为字符串，content_type 必须为 "markdown"，同时提供 content 和 value
-    #   markdown 模式下 & 需转义为 &amp; 否则渲染为乱码
+    #   钉钉服务端会将 & HTML 转义为 &amp; 存储，且渲染时不解码 HTML 实体，
+    #   导致 & 在钉钉中显示为 &amp;。用全角 ＆ (U+FF06) 替代以绕过此问题。
     api_contents = [
         {
-            "sort": str(c["sort"] - 1),  # API 从 0 开始，sort 为字符串
+            "sort": str(c["sort"] - 1),
             "type": "1",
             "content_type": "markdown",
             "key": c["key"],
-            "content": c["value"].replace("&", "&amp;"),
-            "value": c["value"].replace("&", "&amp;"),
+            "content": c["value"].replace("&", "\uff06"),
+            "value": c["value"].replace("&", "\uff06"),
         }
         for c in contents_list
     ]
@@ -462,11 +497,14 @@ def send_dingtalk_log(dd_config: dict, contents_list: list, dry_run: bool = Fals
     resp.raise_for_status()
     result = resp.json()
     if result.get("errcode") != 0:
-        raise RuntimeError(f"发送失败 (errcode={result.get('errcode')}): {result.get('errmsg')}")
+        raise RuntimeError(
+            f"发送失败 (errcode={result.get('errcode')}): {result.get('errmsg')}"
+        )
     return result
 
 
 # ─── 主流程 ──────────────────────────────────────────────────────────────────
+
 
 def main():
     parser = argparse.ArgumentParser(description="钉钉日报自动生成与发送")
@@ -484,16 +522,20 @@ def main():
 
     # 确定报告日期
     today = date.fromisoformat(args.date) if args.date else date.today()
-    actual_date = today                  # 今日完成工作 = 当天
-    plan_date = next_workday(today)      # 明日工作计划 = 下一工作日
+    actual_date = today  # 今日完成工作 = 当天
+    plan_date = next_workday(today)  # 明日工作计划 = 下一工作日
 
     # 确定目标用户 ID
     user_id = args.user or tb_config.get("user_id", "")
     if not user_id:
-        print("错误: 未指定用户 ID，请在 config.json 的 teambition.user_id 中配置，或使用 --user 参数")
+        print(
+            "错误: 未指定用户 ID，请在 config.json 的 teambition.user_id 中配置，或使用 --user 参数"
+        )
         sys.exit(1)
 
-    print(f"报告日期: {today}  |  实际工时: {actual_date}  计划工时: {plan_date}  |  用户: {user_id}")
+    print(
+        f"报告日期: {today}  |  实际工时: {actual_date}  计划工时: {plan_date}  |  用户: {user_id}"
+    )
     print()
 
     # ── 获取 Teambition 数据 ──
@@ -523,8 +565,12 @@ def main():
     plan_key = field_keys.get("tomorrow_plan", "今日计划工作")
 
     project_aliases = report_config.get("project_aliases", {})
-    actual_text = format_actual_content(actual_records, str(actual_date), project_aliases)
-    planned_text = format_planned_content(planned_records, str(plan_date), project_aliases)
+    actual_text = format_actual_content(
+        actual_records, str(actual_date), project_aliases
+    )
+    planned_text = format_planned_content(
+        planned_records, str(plan_date), project_aliases
+    )
 
     contents = []
     sort_idx = 1
@@ -537,7 +583,9 @@ def main():
 
     # 追加额外静态字段（如"遇到的问题"）
     for extra in dd_config.get("extra_fields", []):
-        contents.append({"key": extra["key"], "value": extra.get("value", ""), "sort": sort_idx})
+        contents.append(
+            {"key": extra["key"], "value": extra.get("value", ""), "sort": sort_idx}
+        )
         sort_idx += 1
 
     # ── 预览 ──
