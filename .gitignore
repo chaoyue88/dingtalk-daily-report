@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+*.pyo
+*.Zone.Identifier
+.token_cache.json
+.new_token_cache.json

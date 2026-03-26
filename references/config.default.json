@@ -1,0 +1,27 @@
+{
+  "dingtalk": {
+    "appkey": "",
+    "appsecret": "",
+    "userid": "",
+    "template_id": "",
+    "field_keys": {
+      "yesterday_actual": "今日完成工作",
+      "tomorrow_plan": "明日工作计划"
+    },
+    "extra_fields": [
+      { "key": "其他事项", "value": "无" }
+    ],
+    "to_chat": false,
+    "to_userids": []
+  },
+  "teambition": {
+    "app_id": "",
+    "app_secret": "",
+    "organization_id": "",
+    "api_base": "https://open.teambition.com",
+    "user_id": ""
+  },
+  "report": {
+    "project_aliases": {}
+  }
+}

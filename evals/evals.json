@@ -1,0 +1,23 @@
+{
+  "skill_name": "dingtalk-daily-report",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我想用钉钉日报 skill，但还没配置过。我已经在钉钉建好了一个日报模板，模板里有两个字段：「昨日完成工作」和「今日计划工作」。Teambition 工时 skill 也配好了。帮我完成钉钉日报 skill 的初始配置。",
+      "expected_output": "引导用户完成配置：1) 运行 dd_config.py init；2) 解释各字段含义（appkey/appsecret/userid/template_id/field_keys）；3) 告知如何获取 template_id（运行 templates 命令）；4) 最后运行 verify 验证。步骤清晰，命令可直接复制执行。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "帮我生成今天的钉钉日报，从 Teambition 拉取工时数据。今天是周三（2026-03-25），昨天我在「公共项目-日常管理」花了2小时，「25-XX-某企业服务平台-功能开发」花了5小时。明天计划「功能开发」4小时、「日常管理」1小时，今天已经在 Teambition 里录入了计划。",
+      "expected_output": "引导用户执行日报流程：1) 先 --preview 预览确认内容；2) 告知日期计算逻辑（昨日=2026-03-24，明日=2026-03-26）；3) 给出 --send 发送命令；4) 说明如果配置尚未完成该怎么做。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "我运行 python scripts/dd_report.py --send 发日报，钉钉返回了错误：errcode=80003，errmsg='report content not match template'。我的模板字段名是「昨日工作」和「明日计划」，但 config.json 里写的是「昨日完成工作」和「今日计划工作」。怎么修复？",
+      "expected_output": "准确诊断问题（field_keys 与模板字段名不一致），给出修复步骤：1) 说明 errcode=80003 的含义；2) 指出 field_keys 里的值必须与钉钉模板字段名完全一致；3) 给出具体的 config.json 修改内容；4) 可选建议用 template-detail 命令验证字段名。",
+      "files": []
+    }
+  ]
+}
