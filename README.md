@@ -12,7 +12,27 @@
 - 无实际工时时自动跳过，不发送空日报
 - 明天无计划工时时自动回退使用今天的计划
 
-## 安装依赖
+## 安装
+
+### 方式一：git clone
+
+```bash
+git clone https://github.com/chaoyue88/dingtalk-daily-report ~/.claude/local-skills/dingtalk-daily-report
+```
+
+安装后重启 Claude Code，即可通过自然语言触发（如「帮我发今天的日报」）。
+
+### 方式二：在对话框中直接输入
+
+无需手动 clone，在 Claude Code、OpenCode、OpenClaw 等支持 local skills 的工具对话框中输入：
+
+```
+Fetch and follow https://github.com/chaoyue88/dingtalk-daily-report/blob/main/SKILL.md
+```
+
+AI 会自动拉取 SKILL.md 并完成 skill 的安装配置。
+
+### 安装 Python 依赖
 
 ```bash
 pip install requests PyJWT
